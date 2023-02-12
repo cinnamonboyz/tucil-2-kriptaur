@@ -1,20 +1,35 @@
-from streamchipergpt import *
+from fastapi import FastAPI, File, Form, Request, UploadFile
+from fastapi.responses import StreamingResponse, FileResponse
+from fastapi.templating import Jinja2Templates
 
-# Example usage
-key = 'mysecretkey'.encode()  # Convert key to bytes
-plaintext = 'Hello, world!'.encode()  # Convert plaintext to bytes
+from io import BytesIO
 
-# Encryption
-keystream = rc4(key)
-ciphertext = bytearray()
-for byte in plaintext:
-    ciphertext.append(byte ^ next(keystream))
-print(ciphertext.decode())
+from myOwnStreamCipher import myOwnStreamCipher
 
-# Decryption
-keystream = rc4(key)
-decrypted = bytearray()
-for byte in ciphertext:
-    decrypted.append(byte ^ next(keystream))
+app = FastAPI()
 
-print(decrypted.decode())  # Output: 'Hello, world!'
+@app.get('/')
+async def home(request: Request):
+    return FileResponse('streamcipher.html')
+
+@app.post('/encrypt_text2text')
+async def encrypt_text2text(plain_text: str = Form(None), key: str = Form(None)):
+    buf = myOwnStreamCipher(plain_text, key)
+    return buf
+
+@app.post('/encrypt_text2file')
+async def encrypt_text2file(plain_text: str = Form(None), key: str = Form(None)):
+    buf = BytesIO((myOwnStreamCipher(plain_text, key).encode('latin-1')))
+    return StreamingResponse(buf, media_type='text/plain')
+
+@app.post('/encrypt_file')
+async def encrypt_file(plain_file: UploadFile = File(None), key: str = Form(None)):
+    return StreamingResponse(BytesIO(myOwnStreamCipher((await plain_file.read()).decode('latin-1'), key).encode('latin-1')), media_type=plain_file.content_type)
+
+@app.post('/decrypt_text')
+async def decrypt_text(cipher_text: str = Form(None), key: str = Form(None)):
+    return myOwnStreamCipher(cipher_text.encode('latin-1').decode('unicode-escape'), key)
+
+@app.post('/decrypt_file')
+async def decrypt_file(cipher_file: UploadFile = File(None), key: str = Form(None)):
+    return StreamingResponse(BytesIO(myOwnStreamCipher((await cipher_file.read()).decode('latin-1'), key).encode('latin-1')), media_type=cipher_file.content_type)
