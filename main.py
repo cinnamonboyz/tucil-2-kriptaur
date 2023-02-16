@@ -30,6 +30,6 @@ async def encrypt_file(plain_file: UploadFile = File(None), key: str = Form(None
 async def decrypt_text(cipher_text: str = Form(None), key: str = Form(None)):
     return myOwnStreamCipher(cipher_text.encode('latin-1').decode('unicode-escape'), key)
 
-@app.post('/decrypt_file')
+@app.post('/decrypt_file') 
 async def decrypt_file(cipher_file: UploadFile = File(None), key: str = Form(None)):
     return StreamingResponse(BytesIO(myOwnStreamCipher((await cipher_file.read()).decode('latin-1'), key).encode('latin-1')), media_type=cipher_file.content_type)

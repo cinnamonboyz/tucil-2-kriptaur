@@ -1,3 +1,5 @@
+import playfair
+import vigenere_extended
 
 def swap(arr, pos1, pos2):
     arr[pos1], arr[pos2] = arr[pos2], arr[pos1]
@@ -16,7 +18,7 @@ def ksa(key):
     
     return s
 
-def prga(s, text):
+def prga(s, text, vigenere_extended_cipher):
     i = 0
     j = 0
     c = []
@@ -26,22 +28,24 @@ def prga(s, text):
         j = (j + s[i]) % 256
         swap(s, i, j)
         t = (s[i] + s[j]) % 256
-        keysteam = s[t]
-        c.append(keysteam ^ text[idx])
+        keystream = s[t]
+        c.append(keystream ^ vigenere_extended_cipher[idx % len(vigenere_extended_cipher)] ^ text[idx])
     return bytearray(c)
 
 
 def myOwnStreamCipher(text, key):
+    vigenere_extended_cipher = turnIntoASCII(vigenere_extended.extended_vigenere_encrypt('REZA', key))
+
     text = turnIntoASCII(text)
     key = turnIntoASCII(key)
 
     s = ksa(key)
-    result = prga(s, text)
+    result = prga(s, text, vigenere_extended_cipher)
 
     return result.decode('latin-1')
 
 if __name__ == "__main__":
-    cipher = myOwnStreamCipher("hallo guys2!", "asdf")
+    cipher = myOwnStreamCipher("a", "asdf")
     print(cipher)
     
     plain = myOwnStreamCipher(cipher, "asdf")
